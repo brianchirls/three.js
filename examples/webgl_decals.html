@@ -32,7 +32,7 @@
 	<body>
 
 		<div id="container"></div>
-		<div id="info"><a href="https://threejs.org" target="_blank">three.js</a> - decals - Decal Splatter (click or tap to shoot)</div>
+		<div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - decals - Decal Splatter (click or tap to shoot)</div>
 
 		<script src="../build/three.js"></script>
 		<script src="js/geometries/DecalGeometry.js"></script>
@@ -54,7 +54,6 @@
 			point: new THREE.Vector3(),
 			normal: new THREE.Vector3()
 		};
-		var controls;
 		var mouse = new THREE.Vector2();
 
 		var textureLoader = new THREE.TextureLoader();
@@ -111,7 +110,7 @@
 			camera.position.z = 120;
 			camera.target = new THREE.Vector3();
 
-			controls = new THREE.OrbitControls( camera, renderer.domElement );
+			var controls = new THREE.OrbitControls( camera, renderer.domElement );
 			controls.minDistance = 50;
 			controls.maxDistance = 200;
 
@@ -125,8 +124,8 @@
 			light.position.set( -1, 0.75, -0.5 );
 			scene.add( light );
 
-			var geometry = new THREE.Geometry();
-			geometry.vertices.push( new THREE.Vector3(), new THREE.Vector3() );
+			var geometry = new THREE.BufferGeometry();
+			geometry.setFromPoints( [ new THREE.Vector3(), new THREE.Vector3() ] );
 
 			line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { linewidth: 4 } ) );
 			scene.add( line );
@@ -135,7 +134,7 @@
 
 			raycaster = new THREE.Raycaster();
 
-			mouseHelper = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 10 ), new THREE.MeshNormalMaterial() );
+			mouseHelper = new THREE.Mesh( new THREE.BoxBufferGeometry( 1, 1, 10 ), new THREE.MeshNormalMaterial() );
 			mouseHelper.visible = false;
 			scene.add( mouseHelper );
 
@@ -166,6 +165,8 @@
 			window.addEventListener( 'touchmove', onTouchMove );
 
 			function onTouchMove( event ) {
+
+				var x, y;
 
 				if ( event.changedTouches ) {
 
@@ -201,15 +202,17 @@
 					intersection.point.copy( p );
 
 					var n = intersects[ 0 ].face.normal.clone();
+					n.transformDirection( mesh.matrixWorld );
 					n.multiplyScalar( 10 );
 					n.add( intersects[ 0 ].point );
 
 					intersection.normal.copy( intersects[ 0 ].face.normal );
 					mouseHelper.lookAt( n );
 
-					line.geometry.vertices[ 0 ].copy( intersection.point );
-					line.geometry.vertices[ 1 ].copy( n );
-					line.geometry.verticesNeedUpdate = true;
+					var positions = line.geometry.attributes.position;
+					positions.setXYZ( 0, p.x, p.y, p.z );
+					positions.setXYZ( 1, n.x, n.y, n.z );
+					positions.needsUpdate = true;
 
 					intersection.intersects = true;
 
@@ -238,13 +241,13 @@
 
 			var loader = new THREE.JSONLoader();
 
-			loader.load( 'obj/leeperrysmith/LeePerrySmith.js', function( geometry ) {
+			loader.load( 'models/json/leeperrysmith/LeePerrySmith.json', function( geometry ) {
 
 				var material = new THREE.MeshPhongMaterial( {
 					specular: 0x111111,
-					map: textureLoader.load( 'obj/leeperrysmith/Map-COL.jpg' ),
-					specularMap: textureLoader.load( 'obj/leeperrysmith/Map-SPEC.jpg' ),
-					normalMap: textureLoader.load( 'obj/leeperrysmith/Infinite-Level_02_Tangent_SmoothUV.jpg' ),
+					map: textureLoader.load( 'models/json/leeperrysmith/Map-COL.jpg' ),
+					specularMap: textureLoader.load( 'models/json/leeperrysmith/Map-SPEC.jpg' ),
+					normalMap: textureLoader.load( 'models/json/leeperrysmith/Infinite-Level_02_Tangent_SmoothUV.jpg' ),
 					shininess: 25
 				} );
 
